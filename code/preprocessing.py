@@ -2,6 +2,8 @@
 
 import os
 import pandas as pd
+from transformers import BertTokenizer
+import tensorflow as tf
 
 dir_path = '../../semeval-2017-tweets_Subtask-A/downloaded/'
 
@@ -46,4 +48,5 @@ class BertModel():
 
 if __name__ == '__main__':
 #   clean_data()
-    model = BertModel(dir_path)
+#   model = BertModel(dir_path)
+    tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
