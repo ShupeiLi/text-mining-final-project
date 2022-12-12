@@ -22,19 +22,19 @@
 %
 \title{A BERT-Based Ensemble Learning Approach for Sentiment Classification in Twitter\thanks{Text Mining, Master CS, Fall 2022, Leiden, the Netherlands}}
 %
-%\titlerunning{Abbreviated paper title}
+\titlerunning{BERT-Based Ensemble Learning}
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %
 \author{Shupei Li\inst{1}\and
 Ziyi Xu\inst{1}}
 %
-%\authorrunning{F. Author et al.}
+\authorrunning{S. Li and Z. Xu}
 % First names are abbreviated in the running head.
 % If there are more than two authors, 'et al.' is used.
 %
 \institute{LIACS, Leiden University, Leiden, Netherlands\\
-\email{s3430863@umail.leidenuniv.nl}, \email{s3649024@umail.leidenuniv.nl}}
+\email{\{s3430863, s3649024\}@umail.leidenuniv.nl}}
 %
 \maketitle              % typeset the header of the contribution
 %
@@ -55,11 +55,28 @@ To be continued.
 
 \section{Methodology}
 \subsection{BERT}
+BERT \cite{bert} is a popular NLP model that has achieved the remarkble performance on various tasks, such as text classification, question answering, etc. Compared to traditional RNN models, it encodes sequences in both directions instead of following a left-to-right or right-to-left routine, which is more closer to how humans understand the meaning of the text. Its bidirectional encoding ability is accomplished by the transformer architecture, which is a stack of encoders using multi-head attention mechanism. Specifically, encoders process the entire sequence at once and use layer-wise tensor operations to learn relationships between words in a sentence. This design not only encodes the inputs bidirectionally but also eliminates the possible local bias, for it gives equal importance to the local context and the long-distance context. It is worth mentioning that the training process of BERT is more efficient than RNN due to the feasibility of parallelization.
+
+BERT requires a special format of input called WordPiece. The WordPiece tokenizer splits words into tokens and adds special tokens at the beginning as well as the end of the sentence. Preprocessed inputs provide three aspects of information for BERT model: tokens, sentence segments, and the absolute position. We perform the tokenization operation on both the training set and the test set before modeling.
+
+We also consider two variants of BERT in our project -- RoBERTa \cite{roberta} and DistilBERT \cite{distilbert}. RoBERTa is an optimized version of BERT model. Authors of RoBERTa find that the original BERT is actually undertrained after reproducing BERT experiments. Their solution is increasing the training epochs of BERT and carefully select hyperparameters, which significantly improves the model performance in practice. On the contrary, DistilBERT is a compressed version of BERT. The main idea of DistilBERT is reducing the model size via distillation technique. Distillation consists of a teacher model and a student model. The teacher model is trained on a large dataset and is fine-tuned to maximize the accuracy. However, many features learned by the teacher model are redundant for a specific task. Therefore, we can train a much smaller student model to focus on key features and imitate the output of the teacher model. Experimental results show that DistilBERT is cheaper to train while maintaining a comparable performance to BERT.
+
+\subsection{Ensemble Learning}
+Ensemble learning refers to methods that combine multiple models to achieve better performance in machine learning. It encourages base models to learn different aspects of the data to reduce errors and avoid being entrapped in local optima. In the project, sentiment analysis in Twitter is a multi-class classification problem. And we develop a classification voting ensemble model integrated BERT and its variants. Figure \ref{fig:model} illustrates the architecture of our model.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=11cm]{./figs/model.png}
+    \caption{The Architecture of the Proposed Model}
+    \label{fig:model}
+\end{figure}
+
+Each base model outputs the class prediction for each record. Then, the voting classifier adopts the plurality voting strategy to generate the final prediction. In other words, the final prediction is the class label received the majority votes from base models. If all classes have the same votes, the voting classifier will choose a class label randomly as the output.
 
 
-    
 \section{Experiments}
 \subsection{Experimental Setup}
+Software, hardware, baselines, metrics.
 
 \subsection{Results}
 
