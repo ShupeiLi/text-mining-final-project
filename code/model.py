@@ -12,6 +12,7 @@ from datasets import load_dataset
 
 
 dir_path = '../../semeval-2017-tweets_Subtask-A/downloaded/'
+#dir_path = '../data/'
 
 
 def clean_data():
@@ -40,7 +41,7 @@ class BertModel():
     id2label = {0: 'negative', 1: 'neutral', 2: 'positive'}
     label2id = {'negative': 0, 'neutral': 1, 'positive': 2}
     
-    def __init__(self, dir_path, batch=16, epoch=5, seed=42):
+    def __init__(self, dir_path, batch=16, epoch=50, seed=42):
         self.dir_path = dir_path
         self.batch = batch
         self.epoch = epoch
@@ -52,6 +53,9 @@ class BertModel():
             self.test.drop(columns='id', inplace=True)
             self.train.to_csv(dir_path + 'hug-train.csv', index=False)
             self.test.to_csv(dir_path + 'hug-test.csv', index=False)
+            train_dev, val_dev = train_test_split(self.train, test_size=0.2, random_state=self.seed)
+            train_dev.to_csv(dir_path + 'hug-train-dev.csv', index=False)
+            val_dev.to_csv(dir_path + 'hug-val-dev.csv', index=False)
         self.data = load_dataset('csv', data_files={'train': dir_path + 'hug-train.csv', 'test': dir_path + 'hug-test.csv'})
         self.accuracy = evaluate.load('accuracy')
 
@@ -91,9 +95,9 @@ class BertModel():
         predictions = np.argmax(predictions, axis=1)
         return self.accuracy.compute(predictions=predictions, references=labels)
 
-    def base_bert(self):
-        """Bert base cased model."""
-        tokenizer = AutoTokenizer.from_pretrained('bert-base-cased')
+    def _bert(self, bert_type='bert-base-cased'):
+        """The template for Bert models."""
+        tokenizer = AutoTokenizer.from_pretrained(bert_type)
         def preprocess_function(examples):
             return tokenizer(examples['text'], truncation=True)
         tokenized_data = self.data.map(preprocess_function, batched=True)
@@ -103,7 +107,7 @@ class BertModel():
         total_train_steps = int(batches_per_epoch * self.epoch)
         optimizer, schedule = create_optimizer(init_lr=2e-5, num_warmup_steps=0, num_train_steps=total_train_steps)
         model = TFAutoModelForSequenceClassification.from_pretrained(
-                'bert-base-cased', num_labels=3, id2label=BertModel.id2label, label2id=BertModel.label2id
+                bert_type, num_labels=3, id2label=BertModel.id2label, label2id=BertModel.label2id
                 )
         tf_train_set = model.prepare_tf_dataset(
                 tokenized_data['train'],
@@ -119,10 +123,14 @@ class BertModel():
                 )
         model.compile(optimizer=optimizer)
         metric_callback = KerasMetricCallback(metric_fn=self._compute_metrics, eval_dataset=tf_test_set)
-        model.fit(x=tf_train_set, validation_data=tf_test_set, epochs=3, callbacks=metric_callback)
+        model.fit(x=tf_train_set, epochs=self.epoch, callbacks=metric_callback)
+        preds = model.predict(tf_test_set)
+        preds = np.argmax(preds.logits, axis=1)
+        np.save(f'../results/{bert_type}.npy', preds)
 
 
 if __name__ == '__main__':
 #   clean_data()
     model = BertModel(dir_path)
-    model.base_bert()
+    # !!! TODO: "roberta-base", "distilbert-base-cased"
+#   bert = model._bert('distilbert-base-cased')
