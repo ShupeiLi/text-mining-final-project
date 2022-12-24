@@ -1,0 +1,76 @@
+
+        bert-base-cased
+        Acc: 0.7338186895382467
+        Recall: 0.7169094149635415
+        F1: 0.718122726207886
+        Report:              precision    recall  f1-score   support
+
+           0       0.66      0.65      0.65      1578
+           1       0.72      0.72      0.72      4471
+           2       0.77      0.79      0.78      3978
+
+    accuracy                           0.73     10027
+   macro avg       0.72      0.72      0.72     10027
+weighted avg       0.73      0.73      0.73     10027
+
+        
+        roberta-base
+        Acc: 0.7472823376882417
+        Recall: 0.7236202790888543
+        F1: 0.7310296461771596
+        Report:              precision    recall  f1-score   support
+
+           0       0.71      0.63      0.67      1578
+           1       0.73      0.74      0.73      4471
+           2       0.78      0.80      0.79      3978
+
+    accuracy                           0.75     10027
+   macro avg       0.74      0.72      0.73     10027
+weighted avg       0.75      0.75      0.75     10027
+
+        
+        distilbert-base-cased
+        Acc: 0.7226488481101028
+        Recall: 0.6919941809228322
+        F1: 0.7001892649329675
+        Report:              precision    recall  f1-score   support
+
+           0       0.66      0.58      0.61      1578
+           1       0.70      0.75      0.72      4471
+           2       0.78      0.75      0.76      3978
+
+    accuracy                           0.72     10027
+   macro avg       0.71      0.69      0.70     10027
+weighted avg       0.72      0.72      0.72     10027
+
+        
+        Proposed Hard Voting
+        Acc: 0.7462850304178718
+        Recall: 0.7232956163844109
+        F1: 0.7293494530847746
+        Report:              precision    recall  f1-score   support
+
+           0       0.70      0.63      0.66      1578
+           1       0.73      0.75      0.74      4471
+           2       0.79      0.79      0.79      3978
+
+    accuracy                           0.75     10027
+   macro avg       0.74      0.72      0.73     10027
+weighted avg       0.75      0.75      0.75     10027
+
+        
+        Proposed Soft Voting
+        Acc: 0.7529669891293508
+        Recall: 0.7191125971040978
+        F1: 0.731817221290518
+        Report:              precision    recall  f1-score   support
+
+           0       0.73      0.59      0.65      1578
+           1       0.72      0.78      0.75      4471
+           2       0.81      0.78      0.80      3978
+
+    accuracy                           0.75     10027
+   macro avg       0.75      0.72      0.73     10027
+weighted avg       0.75      0.75      0.75     10027
+
+        

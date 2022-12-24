@@ -6,6 +6,7 @@ import evaluate
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import normalize
 from sklearn.metrics import accuracy_score, recall_score, f1_score, classification_report
 import tensorflow as tf
 from transformers import AutoTokenizer, DataCollatorWithPadding, create_optimizer, TFAutoModelForSequenceClassification
@@ -14,8 +15,6 @@ from datasets import load_dataset
 
 
 dir_path = '../../semeval-2017-tweets_Subtask-A/downloaded/'
-#dir_path = '../data/'
-
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 
@@ -100,12 +99,24 @@ class BertModel():
         self.train['label'] = self.train['label'].map(BertModel.label2id)
         self.test['label'] = self.test['label'].map(BertModel.label2id)
 
+    def _report(self, preds, trues, info):
+        string = f"""
+        {info}
+        Acc: {accuracy_score(trues, preds)}
+        Recall: {recall_score(trues, preds, average='macro')}
+        F1: {f1_score(trues, preds, average='macro')}
+        Report:{classification_report(trues, preds)}
+        """
+        print(string)
+        with open('../results/report.txt', 'a') as f:
+            f.write(string)
+
     def _compute_metrics(self, eval_pred):
         predictions, labels = eval_pred
         predictions = np.argmax(predictions, axis=1)
         return self.accuracy.compute(predictions=predictions, references=labels)
 
-    def bert(self, lr=1e-5, bert_type='bert-base-cased', info=''):
+    def bert(self, lr=1e-5, bert_type='bert-base-cased', info='', prob=False):
         """The template for Bert models."""
         tokenizer = AutoTokenizer.from_pretrained(bert_type)
         def preprocess_function(examples):
@@ -139,8 +150,11 @@ class BertModel():
                 )
         callbacks = [metric_callback, early_stopping_callback, model_checkpoint_callback]
         history = model.fit(x=tf_train_set, epochs=self.epoch, callbacks=callbacks)
+
         model.load_weights(f'../models/{bert_type}')
         preds = model.predict(tf_test_set)
+        if prob:
+            np.save(f'../results/{bert_type + info}-prob.npy', preds.logits)
         preds = np.argmax(preds.logits, axis=1)
         np.save(f'../results/{bert_type + info}.npy', preds)
         return history
@@ -153,8 +167,8 @@ class BertModel():
             his_df = pd.DataFrame.from_dict(history.history)
             his_df.to_csv(f'../results/{bert_type}_{lr}.csv', index=False)
             
-    def proposed(self):
-        """Proposed model."""
+    def proposed_hard_voting(self):
+        """Proposed model: Hard voting."""
         def vote(a, b, c):
             vote_dict = {0: 0, 1: 0, 2: 0}
             lst = [a, b, c]
@@ -166,6 +180,7 @@ class BertModel():
                 if item[1] >= 2:
                     return item[0]
             return random.sample(list(vote_dict.keys()), 1)[0]
+
         preds_dict = dict()
         for name in BertModel.names:
             preds = np.load(f'../results/{name}.npy')
@@ -173,17 +188,22 @@ class BertModel():
         preds_df = pd.DataFrame.from_dict(preds_dict)
         preds = preds_df.apply(lambda row : vote(row['bert-base-cased'], row['roberta-base'], row['distilbert-base-cased']), axis=1).to_numpy()
         trues = np.array(self.data['test']['label'])
-        print(f"""
-        Proposed
-        Acc: {accuracy_score(trues, preds)}
-        Recall: {recall_score(trues, preds, average='macro')}
-        F1: {f1_score(trues, preds, average='macro')}
-        Report:{classification_report(trues, preds)}
-                """)
+        self._report(preds, trues, 'Proposed Hard Voting')
+
+    def proposed_soft_voting(self):
+        """Proposed model: Soft voting."""
+        preds_lst = list()
+        for name in BertModel.names:
+            preds = np.load(f'../results/{name}-prob.npy')
+            preds_lst.append(normalize(preds))
+        preds = np.average(np.array(preds_lst), axis=0)
+        preds = np.argmax(preds, axis=1)
+        trues = np.array(self.data['test']['label'])
+        self._report(preds, trues, 'Proposed Soft Voting')
 
     def main(self, bert_type='bert-base-cased'):
         """Run Bert models."""
-        history = self.bert(bert_type=bert_type)
+        history = self.bert(bert_type=bert_type, prob=True)
         his_df = pd.DataFrame.from_dict(history.history)
         his_df.to_csv(f'../results/{bert_type}.csv', index=False)
 
@@ -192,26 +212,23 @@ class BertModel():
         trues = np.array(self.data['test']['label'])
         for name in BertModel.names:
             preds = np.load(f'../results/{name}.npy')
-            print(f"""
-            {name}
-            Acc: {accuracy_score(trues, preds)}
-            Recall: {recall_score(trues, preds, average='macro')}
-            F1: {f1_score(trues, preds, average='macro')}
-            Report:{classification_report(trues, preds)}
-                    """)
+            self._report(preds, trues, name)
 
 
 if __name__ == '__main__':
-#   clean_data()
-   
-#   model = BertModel(dir_path, tune=True)
-#   model.tuning()
-#   model.tuning(bert_type='roberta-base')
-#   model.tuning(bert_type='distilbert-base-cased')
+    clean_data()
 
+    # Hyperparameter tuning
+    model = BertModel(dir_path, tune=True)
+    model.tuning()
+    model.tuning(bert_type='roberta-base')
+    model.tuning(bert_type='distilbert-base-cased')
+
+    # Prediction and evaluation
     model = BertModel(dir_path)
-#   model.main()
-#   model.main(bert_type='roberta-base')
-#   model.main(bert_type='distilbert-base-cased')
-#   model.evaluation()
-#   model.proposed()
+    model.main()
+    model.main(bert_type='roberta-base')
+    model.main(bert_type='distilbert-base-cased')
+    model.evaluation()
+    model.proposed_hard_voting()
+    model.proposed_soft_voting()
