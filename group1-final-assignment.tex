@@ -31,8 +31,8 @@
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %
-\author{Shupei Li\inst{1}\and
-Ziyi Xu\inst{1}}
+\author{Shupei Li\and
+Ziyi Xu}
 %
 \authorrunning{S. Li and Z. Xu}
 % First names are abbreviated in the running head.
@@ -45,7 +45,7 @@ Ziyi Xu\inst{1}}
 %
 \begin{abstract}
 %The abstract should briefly summarize the contents of the paper in 150--250 words.
-To be continued.
+In this project, we present an ensemble learning method for sentiment classification. We use the state-of-the-art BERT as base models and develop a modified soft voting strategy for the meta model. The effectiveness of our proposed approach is verified on SemEval-2017 dataset, which quantifies the sentiment in tweets via a three-point ordinal scale. Experimental results show that the overall performance of our proposed model is better than that of baselines.
 
 \keywords{Sentiment Analysis \and BERT \and Ensemble Learning}
 \end{abstract}
@@ -55,46 +55,56 @@ To be continued.
 \section{Introduction}
 Sentiment analysis, a growing field today, is the process of analyzing pieces of writing to determine the emotional tone they carry. In simple words, sentiment analysis helps to find the author's attitude. This method can be used by businesses to analyze product reviews and feedback, especially for social media companies with large information streams because of the wealth of data they generate. Researchers also have a special interest in social media data because of their easy availability and rapid change.
 
-SemEval is an International Workshop on Semantic Evaluation, formerly SensEval. It is an ongoing series of evaluations of computational semantic analysis systems. The SemEval-2017 Task 4 focuses on classifying and quantifying the sentiment of tweets. The task was included in this workshop in the previous year \cite{nakov-etal-2016-semeval}, and Sentiment Analysis in Twitter has been run yearly since 2013 \cite{nakov-etal-2013-semeval}. The subtask A of this task is the problem we try to unravel in this article. It is about to decide the overall sentiment of tweets and marks them on a three-point ordinal scale.% In this task, we are interested in the sentiment expressed in individual tweets. This is not from the overall perspective of political science, economics, and social science, but from a microscopic aspect of language processing.
+SemEval is an International Workshop on Semantic Evaluation, formerly SensEval. It is an ongoing series of evaluations of computational semantic analysis systems. The SemEval-2017 Task 4 focuses on classifying and quantifying the sentiment of tweets. The task was included in this workshop in the previous year \cite{nakov-etal-2016-semeval}, and Sentiment Analysis in Twitter has been run yearly since 2013 \cite{nakov-etal-2013-semeval}. The subtask A of this task is the problem we try to unravel in this article. It is about deciding the overall sentiment of tweets and marking them on a three-point ordinal scale.% In this task, we are interested in the sentiment expressed in individual tweets. This is not from the overall perspective of political science, economics, and social science, but from a microscopic aspect of language processing.
 
-To achieve a higher accuracy, we don't choose CNN, LSTM, or supervised SVM but apply the more powerful BERT. Specially, we investigate BERT and its two variants in our project. In order to leverage the advantages of different models, we design an ensemble learning approach rather than just using BERT model alone. The basic idea is dividing the classification task into two stages. In the first stage, we train a series of base models to generate corresponding predictions. These predictions are the inputs of the meta model in the second stage. The final predictions are the outputs of the meta model.
+Our proposed model adopts two strategies with the goal of achieving a higher accuracy. One is choosing more powerful BERT and its variants as base models instead of CNN, LSTM, or SVM. The other is that we design an ensemble learning approach to integrate the advantages of different BERT models, which encourages the learning diversity and might enhance model performance. The classification task is divided into two stages. In the first stage, we train a series of base models to generate corresponding predictions. These predictions are the inputs of the meta model in the second stage. The final predictions are the outputs of the meta model.
 
-The remainder of the paper is structured as follows. Section 2 discusses previous work related to sentiment classification. Following that, Section 3 introduces the datasets provided by SemEval. We explain the working principle of our ensemble learning approach in Section 4. Section 5 describes the procedure of experiments in detail and reports the experimental results. The paper is concluded with a discussion about results and a brief summary. We also attach the contributions of group members at the end of the paper. 
+The remainder of the paper is structured as follows. Section 2 discusses previous work related to sentiment classification. Following that, Section 3 introduces datasets provided by SemEval. We explain the data preparation workflow, our proposed approach, and baselines in Section 4. Section 5 describes the procedure of experiments in detail and reports the experimental results. The paper is concluded with a discussion about results and a brief summary. We also attach the contributions of group members at the end of the paper. 
 
 \section{Related Work}
+The prevalence of social media has been driving the growth of sentiment analysis research since early 2000 \cite{2018sa}. Earlier studies mainly focused on the lexicon-based approach, which discovers sentimental polarity based either on a predefined dictionary or on some semantic methods \cite{2014sa}. Previous works have also intensively researched the applications of traditional machine learning methods in sentiment analysis, such as SVM, naive Bayes, etc \cite{2019sa}. However, both lexicon-based and machine learning approaches require manually feature selection, which limits their applicability in large and dynamic user-generated content like tweets.
+
+In recent years, deep learning methods have been introduced into sentiment analysis field and have achieved the remarkable performance on many benchmark datasets \cite{2019sa}. Popular deep learning frameworks for sentiment classification include CNNs and RNNs. Inspired by computer vision field, the CNN architecture first constructs a sentence matrix using tokens and word vectors. Then it treats the sentence matrix as an "image" and applys regular convolution operations on the matrix \cite{cnns}. The major drawback of CNNs is that CNNs can't capture the hierarchical relationship between local features. Besides, the pooling layer may cause the loss of critical information and harm the classification accuracy. LSTMs and GRUs are two commonly used RNN variants. Nowak et al. \cite{rnns} compared LSTM, bidirectional LSTM, and GRU with other algorithms on real-world datasets and found RNNs outperformed baselines in sentiment classification task. However, RNNs are not suitable for processing long sequences and the training process is very slow. There were also attempts to combine CNNs and RNNs, aiming at enhancing model performance further \cite{com1}\cite{com2}. But these hybrid models don't overcome the intrinsic weaknesses of CNNs and RNNs.
+
+In this project, we consider BERT, the state-of-the-art model in several natural language processing tasks. Compared to CNNs and RNNs, BERT leverages the attention mechanism to model the complex relationship between features in short-distance as well as long-distance context. And it is efficient on GPUs and TPUs \cite{bert}. We describe our method in detail in Section \ref{sec:method}.
 
 \section{Data}
 
 The dataset consists of 11 files with tweets from 2013 to 2015. Tweets are marked with sentiment labels on a three-point scale $\left\{ \text{Positive, Neutral, Negative} \right\}$. Each tweet corresponds to one row in datasets following a fixed format: [\texttt{id}, \texttt{sentiment label}, \texttt{text}].
 
-The criterion of tweet selection is covering popular topics at the time of sending tweets. Datasets are downloaded via the Twitter API and have been preprocessed by workshop in advance, where three kinds of data have been removed: repeated tweets, the bag-of-words cosine similarity exceeded 0.6, and topics with less than 100 tweets. CrowdFlower is used to create all annotations on both training set and testing set. Each tweet is annotated by at least five people to ensure the accuracy of annotations. Another main quality control measure is performing hidden tests to filter out unqualified annotations. There are also manual inspections on pilot runs aiming at adjusting the annotation instructions dynamically. Table \ref{tab:3-stat} summarizes the descriptive statistics of 11 files.
+The criterion of tweet selection is covering popular topics at the time of sending tweets. Datasets are downloaded via the Twitter API and have been preprocessed by workshop in advance, where three kinds of data have been removed: repeated tweets, the bag-of-words cosine similarity exceeded 0.6, and topics with less than 100 tweets. CrowdFlower is used to create all annotations on both training set and test set. Each tweet is annotated by at least five people to ensure the accuracy of annotations. Another main quality control measure is performing hidden tests to filter out unqualified annotations. There are also manual inspections on pilot runs aiming at adjusting the annotation instructions dynamically. Table \ref{tab:3-stat} summarizes the descriptive statistics of 11 files.
 
 \begin{table}[!ht]
 	\centering
-	\caption{Descriptive Statistics of DataSets} 
+	\caption{Descriptive Statistics of Datasets} 
     \label{tab:3-stat}
 	\begin{tabular}{lllll}
 		\toprule
         \textbf{Dataset} & \textbf{Positive} & \textbf{Neutral} & \textbf{Negative} & \textbf{Total}\\ 
         \midrule
-		2013train   & 3,639     & 4,586    & 1,458     & 9,683  \\
-		2013dev     & 575      & 738     & 340      & 1,653  \\
-		2013test    & 1,474     & 1,513    & 559      & 3,546  \\
-		2014sarcasm & 20       & 7       & 21       & 48    \\
-		2014test    & 981      & 669     & 202      & 1,852  \\
-		2015train   & 170      & 253     & 65       & 488   \\
-		2015test    & 1,038     & 987     & 364      & 2,389  \\
-		2016train   & 3,017     & 2,001    & 849      & 5,867  \\
-		2016dev     & 829      & 745     & 391      & 1,965  \\
-		2016devtest & 994      & 680     & 325      & 1,999  \\
-		2016test    & 7,059     & 10,341   & 3,231     & 20,631 \\ 
+		2013train   & 3,640     & 4,586    & 1,458     & 9,684  \\
+		2013dev     & 575      & 739     & 340      & 1,654  \\
+		2013test    & 1,475     & 1,513    & 559      & 3,547  \\
+		2014sarcasm & 20       & 7       & 22       & 49    \\
+		2014test    & 982      & 669     & 202      & 1,853  \\
+		2015train   & 170      & 253     & 66       & 489   \\
+		2015test    & 1,038     & 987     & 365      & 2,390 \\
+		2016train   & 3,017     & 2,001    & 850      & 5,868  \\
+		2016dev     & 829      & 746     & 391      & 1,966  \\
+		2016devtest & 994      & 681     & 325      & 2,000  \\
+		2016test    & 7,059     & 10,342   & 3,231     & 20,632 \\ 
+        \midrule
+        Total   & 19,799  & 22,524  & 7,809  &   50,132\\
         \bottomrule
 	\end{tabular}
 \end{table}
 
-According to Table \ref{tab:3-stat}, 2016test file has 20,631 records in total, which is much larger than any other dataset. If we only train the model on 2016train file and test it on 2016test file, the imbalance in data volume would prevent the model from capturing enough information during training and lead to a poor generalization ability. Our solution is concatenating all the other 10 files as the training set. As a result, the training set contains 29,490 records, while the test set (2016test) includes 20,631 records. It is worth mentioning that records in 2016test file have a redundant \texttt{\textbackslash t} before \texttt{\textbackslash n}. We remove the unnecessary \texttt{\textbackslash t} to ensure the dataset would be read into Python appropriately.
+%According to Table \ref{tab:3-stat}, 2016test file has 20,631 records in total, which is much larger than any other dataset. If we only train the model on 2016train file and test it on 2016test file, the imbalance in data volume would prevent the model from capturing enough information during training and lead to a poor generalization ability. Our solution is concatenating all the other 10 files as the training set. As a result, the training set contains 29,490 records, while the test set (2016test) includes 20,631 records. It is worth mentioning that records in 2016test file have a redundant \texttt{\textbackslash t} before \texttt{\textbackslash n}. We remove the unnecessary \texttt{\textbackslash t} to ensure the dataset would be read into Python appropriately.
 
-\section{Methodology}
+\section{Methodology} \label{sec:method}
+\subsection{Data Preparation}
+We perform data cleaning and dataset division before modeling. Notice that records in 2016test file have a redundant \texttt{\textbackslash t} before \texttt{\textbackslash n}. We remove the unnecessary \texttt{\textbackslash t} to ensure the dataset would be read into Python appropriately. To create training set and test set, we concatenate all 11 files and randomly sample 80\% records as training set while treating the others as test set. As a result, there are 40,105 records in training set and 10,027 records in test set. We also create the validation set for hyperparameter tuning by randomly sampling 20\% recoreds from the training set. The random seed is set to 42 in our experiments to ensure the reproducibility.
+
 \subsection{BERT}
 BERT \cite{bert} is a popular NLP model that has achieved the remarkble performance on various tasks, such as text classification, question answering, etc. Compared to traditional RNN models, it encodes sequences in both directions instead of following a left-to-right or right-to-left routine, which is more closer to how humans understand the meaning of the text. Its bidirectional encoding ability is accomplished by the transformer architecture, which is a stack of encoders using multi-head attention mechanism. Specifically, encoders process the entire sequence at once and use layer-wise tensor operations to learn relationships between words in a sentence. This design not only encodes the inputs bidirectionally but also eliminates the possible local bias, for it gives equal importance to the local context and the long-distance context. It is worth mentioning that the training process of BERT is more efficient than RNN due to the feasibility of parallelization.
 
@@ -112,12 +122,16 @@ Ensemble learning refers to methods that combine multiple models to achieve bett
     \label{fig:model}
 \end{figure}
 
-Each base model outputs the class prediction for each record. Then, the voting classifier adopts the plurality voting strategy to generate the final prediction. In other words, the final prediction is the class label received the majority votes from base models. If all classes have the same votes, the voting classifier will choose a class label randomly as the output.
+Each base model outputs the class prediction for each record. Here we consider two strategies for the meta model --- hard voting and soft voting. Hard voting means the voting classifier adopts the plurality voting strategy to generate the final prediction. In other words, the final prediction is the class label received the majority votes from base models. If all classes have the same votes, the voting classifier will choose a class label randomly as the output. However, hard voting ignores the probability information related to each model's prediction and is likely to be affected by relatively weaker base models. Thus, we set the hard voting ensemble learning as one of our baselines and propose a modified version of soft voting.
 
+Traditional soft voting strategy averages the output probabilities of base models and selects the class with the highest probability. However, the probabilistic prediction is ill-defined in Hugging Face's implementation of BERT, i.e., the outputs may contain negative numbers and are not normalized. We think the negative value is a signal of the unlikely class and retain the negative numbers when aggregating predictions. Our modified soft voting is scaling each model's prediction array to unit norm, calculating the element-wise average, and output the class with the biggest value. Therefore, our proposed model is the ensemble of three BERT base learners and a modified soft voting classifier.
+
+\subsection{Baselines}
+
+We compare the proposed method against four baselines. The first three benchmarks are BERT, RoBERTa, and DistilBERT alone. We set the ensemble BERT model with hard voting strategy as the fourth baseline, as mentioned in Section 4.3. Accuracy, macro recall, and macro F1 are selected as metrics in experiments.
 
 \section{Experiments}
 \subsection{Experimental Setup}
-Software, hardware, baselines, metrics.
 
 \subsection{Results}
 
@@ -126,6 +140,7 @@ Software, hardware, baselines, metrics.
 \section{Conclusion}
     
 \section{Contributions}
+Authors contribute equally to the programming and the report.
 
 % ---- Bibliography ----
 %
@@ -135,4 +150,7 @@ Software, hardware, baselines, metrics.
 \bibliographystyle{splncs04}
 \bibliography{paper}
 %
+
+\section*{Appendix}
+
 \end{document}
