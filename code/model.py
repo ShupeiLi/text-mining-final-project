@@ -6,7 +6,6 @@ import evaluate
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import normalize
 from sklearn.metrics import accuracy_score, recall_score, f1_score, classification_report
 import tensorflow as tf
 from transformers import AutoTokenizer, DataCollatorWithPadding, create_optimizer, TFAutoModelForSequenceClassification
@@ -195,7 +194,7 @@ class BertModel():
         preds_lst = list()
         for name in BertModel.names:
             preds = np.load(f'../results/{name}-prob.npy')
-            preds_lst.append(normalize(preds))
+            preds_lst.append(np.exp(preds) / np.sum(np.exp(preds)))
         preds = np.average(np.array(preds_lst), axis=0)
         preds = np.argmax(preds, axis=1)
         trues = np.array(self.data['test']['label'])

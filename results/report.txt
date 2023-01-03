@@ -72,5 +72,17 @@ weighted avg       0.75      0.75      0.75     10027
     accuracy                           0.75     10027
    macro avg       0.75      0.72      0.73     10027
 weighted avg       0.75      0.75      0.75     10027
-
         
+        Proposed Soft Voting - softmax
+        Acc: 0.7509723745886108
+        Recall: 0.7304996874444424
+        F1: 0.7347019493154415
+        Report:              precision    recall  f1-score   support
+
+           0       0.70      0.65      0.67      1578
+           1       0.74      0.74      0.74      4471
+           2       0.78      0.81      0.80      3978
+
+    accuracy                           0.75     10027
+   macro avg       0.74      0.73      0.73     10027
+weighted avg       0.75      0.75      0.75     10027
