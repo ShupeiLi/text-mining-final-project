@@ -45,7 +45,7 @@ Ziyi Xu}
 %
 \begin{abstract}
 %The abstract should briefly summarize the contents of the paper in 150--250 words.
-In this project, we present an ensemble learning method for sentiment classification. We use the state-of-the-art BERT as base models and develop a modified soft voting strategy for the meta model. The effectiveness of our proposed approach is verified on SemEval-2017 dataset, which quantifies the sentiment in tweets via a three-point ordinal scale. Experimental results show that the overall performance of our proposed model is better than that of baselines.
+In this project, we present an ensemble learning method for sentiment classification. We use the state-of-the-art BERT as base models and a soft voting classifier as the meta model. The effectiveness of our proposed approach is verified on SemEval-2017 dataset, which quantifies the sentiment in tweets via a three-point ordinal scale. Experimental results show that the overall performance of our proposed model is better than that of baselines.
 
 \keywords{Sentiment Analysis \and BERT \and Ensemble Learning}
 \end{abstract}
@@ -98,8 +98,6 @@ The criterion of tweet selection is covering popular topics at the time of sendi
 	\end{tabular}
 \end{table}
 
-%According to Table \ref{tab:3-stat}, 2016test file has 20,631 records in total, which is much larger than any other dataset. If we only train the model on 2016train file and test it on 2016test file, the imbalance in data volume would prevent the model from capturing enough information during training and lead to a poor generalization ability. Our solution is concatenating all the other 10 files as the training set. As a result, the training set contains 29,490 records, while the test set (2016test) includes 20,631 records. It is worth mentioning that records in 2016test file have a redundant \texttt{\textbackslash t} before \texttt{\textbackslash n}. We remove the unnecessary \texttt{\textbackslash t} to ensure the dataset would be read into Python appropriately.
-
 \section{Methodology} \label{sec:method}
 \subsection{Data Preparation}
 We perform data cleaning and dataset division before modeling. Notice that records in 2016test file have a redundant \texttt{\textbackslash t} before \texttt{\textbackslash n}. We remove the unnecessary \texttt{\textbackslash t} to ensure the dataset would be read into Python appropriately. To create training set and test set, we concatenate all 11 files and randomly sample 80\% records as training set while treating the others as test set. As a result, there are 40,105 records in training set and 10,027 records in test set. We also create the validation set for hyperparameter tuning by randomly sampling 20\% recoreds from the training set. The random seed is set to 42 in our experiments to ensure the reproducibility.
@@ -121,18 +119,22 @@ Ensemble learning refers to methods that combine multiple models to achieve bett
     \label{fig:model}
 \end{figure}
 
-Each base model outputs the class prediction for each record. Here we consider two strategies for the meta model --- hard voting and soft voting. Hard voting means the voting classifier adopts the plurality voting strategy to generate the final prediction. In other words, the final prediction is the class label received the majority votes from base models. If all classes have the same votes, the voting classifier will choose a class label randomly as the output. However, hard voting ignores the probability information related to each model's prediction and is likely to be affected by relatively weaker base models. Thus, we set the hard voting ensemble learning as one of our baselines and propose a modified version of soft voting.
+Each base model outputs the class prediction for each record. Here we consider two strategies for the meta model --- hard voting and soft voting. Hard voting means the voting classifier adopts the plurality voting strategy to generate the final prediction. In other words, the final prediction is the class label received the majority votes from base models. If all classes have the same votes, the voting classifier will choose a class label randomly as the output. However, hard voting ignores the probability information related to each model's prediction and is likely to be affected by relatively weaker base models. Thus, we set the hard voting ensemble learning as one of our baselines and adopt the soft voting strategy.
 
-Traditional soft voting strategy averages the output probabilities of base models and selects the class with the highest probability. However, the probabilistic prediction is ill-defined in Hugging Face's implementation of BERT, i.e., the outputs may contain negative numbers and are not normalized. We think the negative value is a signal of the unlikely class and retain the negative numbers when aggregating predictions. Our modified soft voting is scaling each model's prediction array to unit norm, calculating the element-wise average, and output the class with the biggest value. Therefore, our proposed model is the ensemble of three BERT base learners and a modified soft voting classifier.
+Soft voting strategy averages the output probabilities of base models and selects the class with the highest probability. However, outputs of base models may contain negative numbers and are not normalized. We convert the outputs into a probability distribution by applying the softmax function:
+\begin{align*}
+    P(c_i) = \frac{\exp{(\hat{y}_i)}}{\sum_i \exp{(\hat{y}_i)}}
+\end{align*}
+where $P(c_i)$ is the estimated probability of class $i$ and $\hat{y}_i$ is the output value of the base model for class $i$. In summary, our proposed model is the ensemble of three BERT base learners and a soft voting classifier.
 
 \subsection{Baselines}
 We compare the proposed method against four baselines. The first three benchmarks are BERT, RoBERTa, and DistilBERT alone. We set the ensemble BERT model with hard voting strategy as the fourth baseline, as mentioned in Section 4.3. Accuracy, macro recall, and macro F1 are selected as metrics in experiments.
 
 \section{Experiments}
 \subsection{Experimental Setup}
-Before feeding data to the model, we first preprocess all the input data to make the text more readable and accurate. Three main changings are made: the first is to remove all the $@user\_name$ at the beginning of the text, the second is to use $\&$ replacing $\&amp$, and the last is to replace multiple spaces with one space. After accomplishing the above procedures, we transfer the text label into numerical id, setting negative as $0$, neutral as $1$, and positive as $2$.
+We replace three patterns in tweets and tokenize the textual data before feeding them into models. The first pattern to be substituted is $@user\_name$, which indicates other users in Twitter. The second is to replace $\&amp$ with $\&$. And the last is to delete redundant spaces. We also map the text labels into categorical variables to meet the requirements of APIs, i.e., setting Negative as $0$, Neutral as $1$, and Positive as $2$.
 
-For the experiments, we build up three individual baselines, BERT, RoBERTa, and DistilBERT, and then use them to generate the other two ensemble models.
+% TODO: Software, Hardware, hyperparameter tuning (callback).
 
 The architecture of BERT and its variants is rarely similar, and the process can be concluded as tokenization, training, and tuning. Since the transformer needs the WordPiece tokens as input, we take the pre-trained vocabulary to tokenize the text with the help of \texttt{Data Collator}. Then comes the training part. We load the model from pre-trained data and set up the number of labels as $3$ according to the task. The batch, the epoch, and the learning rate are set as $16$, $50$, and $10^{-5}$, respectively. Then we create a basic optimizer with the learning rate to compile the model. To fit the model, there are three various callbacks. The \texttt{metric\_callback} can compute metrics at the end of every epoch without compiling by TF,  \texttt{early\_stopping\_callback} stops the model when accuracy remains the same among three computing, and \texttt{model\_checkpoint\_callback} saves the best performance of the model. With these callbacks, we tune the learning rate from $10^{-5}$ to $10^{-2}$ to find the best-performing one and use the weights saved by \texttt{model\_checkpoint\_callback} to make the prediction.
 
