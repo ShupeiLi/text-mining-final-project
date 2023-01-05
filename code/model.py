@@ -215,19 +215,19 @@ class BertModel():
 
 
 if __name__ == '__main__':
-#   clean_data()
+    clean_data()
 
-#   # Hyperparameter tuning
-#   model = BertModel(dir_path, tune=True)
-#   model.tuning()
-#   model.tuning(bert_type='roberta-base')
-#   model.tuning(bert_type='distilbert-base-cased')
+    # Hyperparameter tuning
+    model = BertModel(dir_path, tune=True)
+    model.tuning()
+    model.tuning(bert_type='roberta-base')
+    model.tuning(bert_type='distilbert-base-cased')
 
-#   # Prediction and evaluation
+    # Prediction and evaluation
     model = BertModel(dir_path)
-#   model.main()
-#   model.main(bert_type='roberta-base')
-#   model.main(bert_type='distilbert-base-cased')
+    model.main()
+    model.main(bert_type='roberta-base')
+    model.main(bert_type='distilbert-base-cased')
     model.evaluation()
     model.proposed_hard_voting()
     model.proposed_soft_voting()
