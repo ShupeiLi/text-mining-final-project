@@ -6,7 +6,6 @@ import evaluate
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import normalize
 from sklearn.metrics import accuracy_score, recall_score, f1_score, classification_report
 import tensorflow as tf
 from transformers import AutoTokenizer, DataCollatorWithPadding, create_optimizer, TFAutoModelForSequenceClassification
@@ -105,7 +104,7 @@ class BertModel():
         Acc: {accuracy_score(trues, preds)}
         Recall: {recall_score(trues, preds, average='macro')}
         F1: {f1_score(trues, preds, average='macro')}
-        Report:{classification_report(trues, preds)}
+        Report:{classification_report(trues, preds, digits=4)}
         """
         print(string)
         with open('../results/report.txt', 'a') as f:
@@ -195,7 +194,7 @@ class BertModel():
         preds_lst = list()
         for name in BertModel.names:
             preds = np.load(f'../results/{name}-prob.npy')
-            preds_lst.append(normalize(preds))
+            preds_lst.append(np.exp(preds) / np.sum(np.exp(preds)))
         preds = np.average(np.array(preds_lst), axis=0)
         preds = np.argmax(preds, axis=1)
         trues = np.array(self.data['test']['label'])
@@ -216,19 +215,19 @@ class BertModel():
 
 
 if __name__ == '__main__':
-    clean_data()
+#   clean_data()
 
-    # Hyperparameter tuning
-    model = BertModel(dir_path, tune=True)
-    model.tuning()
-    model.tuning(bert_type='roberta-base')
-    model.tuning(bert_type='distilbert-base-cased')
+#   # Hyperparameter tuning
+#   model = BertModel(dir_path, tune=True)
+#   model.tuning()
+#   model.tuning(bert_type='roberta-base')
+#   model.tuning(bert_type='distilbert-base-cased')
 
-    # Prediction and evaluation
+#   # Prediction and evaluation
     model = BertModel(dir_path)
-    model.main()
-    model.main(bert_type='roberta-base')
-    model.main(bert_type='distilbert-base-cased')
+#   model.main()
+#   model.main(bert_type='roberta-base')
+#   model.main(bert_type='distilbert-base-cased')
     model.evaluation()
     model.proposed_hard_voting()
     model.proposed_soft_voting()
