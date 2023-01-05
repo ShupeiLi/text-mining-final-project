@@ -103,7 +103,7 @@ The criterion of tweet selection is covering popular topics at the time of sendi
 We perform data cleaning and dataset division before modeling. Notice that records in 2016test file have a redundant \texttt{\textbackslash t} before \texttt{\textbackslash n}. We remove the unnecessary \texttt{\textbackslash t} to ensure the dataset would be read into Python appropriately. To create training set and test set, we concatenate all 11 files and randomly sample 80\% records as training set while treating the others as test set. As a result, there are 40,105 records in training set and 10,027 records in test set. We also create the validation set for hyperparameter tuning by randomly sampling 20\% recoreds from the training set. The random seed is set to 42 in our experiments to ensure the reproducibility.
 
 \subsection{BERT}
-BERT \cite{bert} is a popular NLP model that has achieved the remarkble performance on various tasks, such as text classification, question answering, etc. Compared to traditional RNN models, it encodes sequences in both directions instead of following a left-to-right or right-to-left routine, which is more closer to how humans understand the meaning of the text. Its bidirectional encoding ability is accomplished by the transformer architecture, which is a stack of encoders using multi-head attention mechanism. Specifically, encoders process the entire sequence at once and use layer-wise tensor operations to learn relationships between words in a sentence. This design not only encodes the inputs bidirectionally but also eliminates the possible local bias, for it gives equal importance to the local context and the long-distance context. It is worth mentioning that the training process of BERT is more efficient than RNN due to the feasibility of parallelization.
+BERT \cite{bert} is a popular NLP model that has achieved the remarkble performance on various tasks, such as text classification, question answering, etc. Compared to traditional RNN models, it encodes sequences in both directions instead of following a left-to-right or right-to-left routine, which is closer to how humans understand the meaning of the text. Its bidirectional encoding ability is accomplished by the transformer architecture, which is a stack of encoders using multi-head attention mechanism. Specifically, encoders process the entire sequence at once and use layer-wise tensor operations to learn relationships between words in a sentence. This design not only encodes the inputs bidirectionally but also eliminates the possible local bias, for it gives equal importance to the local context and the long-distance context. It is worth mentioning that the training process of BERT is more efficient than RNN due to the feasibility of parallelization.
 
 BERT requires a special format of input called WordPiece. The WordPiece tokenizer splits words into tokens and adds special tokens at the beginning as well as the end of the sentence. Preprocessed inputs provide three aspects of information for BERT model: tokens, sentence segments, and the absolute position. We perform the tokenization operation on both the training set and the test set before modeling.
 
@@ -132,7 +132,7 @@ We compare the proposed method against four baselines. The first three benchmark
 
 \section{Experiments}
 \subsection{Experimental Setup}
-We replace three patterns in tweets and tokenize the textual data before feeding them into models. The first pattern to be substituted is $@user\_name$, which indicates other users in Twitter. The second is to replace $\&amp$ with $\&$. And the last is to delete redundant spaces. We also map the text labels into categorical variables to meet the requirements of APIs, i.e., setting Negative as $0$, Neutral as $1$, and Positive as $2$. We apply Hugging Face's implementation of BERT models. Table \ref{tab:exp-software} summarizes the software environment of our experiments. 
+We replace three patterns in tweets and tokenize the textual data before feeding them into models. The first pattern is $@user\_name$, which indicates other users on Twitter. We substitude it with a single space. The second is to replace $\&amp$ with $\&$. And the last is to delete redundant spaces. We also map the text labels into categorical variables to meet the requirements of APIs, i.e., setting Negative as 0, Neutral as 1, and Positive as 2. We apply Hugging Face's implementation of BERT models. Table \ref{tab:exp-software} summarizes the software environment of our experiments. 
 
 \begin{table}[!ht]
     \centering
@@ -150,7 +150,7 @@ We replace three patterns in tweets and tokenize the textual data before feeding
     \end{tabular}
 \end{table}
 
-Our experimental process consists of hyperparameter tuning, training, and evaluation. Grid search technique is used to optimize hyperparameters. The best hyperparameter setting is \texttt{batch size}$= 16$, \texttt{initial learning rate}$ = 10^{-5}$. We combine early stopping and model checkpoint saving strategies to enhance the model performance further. Specifically, we set the number of epochs as 50, stop the training if the accuracy doesn't improve in 3 epoches, and load the best model when evaluating. All experiments is deployed on a cloud server with an Intel Xeon(R) Gold 6330 CPU and a RTX A5000 GPU.
+Our experimental process consists of hyperparameter tuning, training, and evaluation. Grid search technique is used to optimize hyperparameters. The best hyperparameter setting is \texttt{batch size}$= 16$, \texttt{initial learning rate}$ = 10^{-5}$. We combine early stopping and model checkpoint saving strategies to enhance the model performance further. Specifically, we set the number of epochs as 50, stop the training if the accuracy doesn't improve in 3 epochs, and load the best model when evaluating. All experiments are deployed on a cloud server with an Intel Xeon(R) Gold 6330 CPU and a RTX A5000 GPU.
 
 \subsection{Results}
 Table \ref{tab:results} reports the experimental results. The detailed evaluation report for each class is attached as Appendix.
@@ -166,23 +166,21 @@ Table \ref{tab:results} reports the experimental results. The detailed evaluatio
 		BERT        & 0.7338     & 0.7169  & 0.7181    \\
 		RoBERTa     & 0.7473     & 0.7236  & 0.7310    \\
 		DistilBERT  & 0.7226     & 0.6920  & 0.7002    \\
-		Ensemble BERT with Hard Voting & 0.7463     & 0.7233  & 0.7293    \\
+		Ensemble BERT with Hard Voting & 0.7458     & 0.7229  & 0.7289    \\
         Ensemble BERT with Soft Voting & \textbf{0.7510}     & \textbf{0.7305}  & \textbf{0.7347}    \\ 
 		\bottomrule
 	\end{tabular}
 \end{table}
 
-Our proposed model outperforms benchmarks on all metrics, which supports the effectiveness of our method. For the base model, standard BERT performs worse than RoBERTa but better than DistilBERT, which is consistent with the theory. It is worth noting that the ensemble BERT model with hard voting achieves slighly worse scores on all metrics than RoBERTa alone. We think the reason is that the performance of hard voting in this task is affected by DistilBERT that is a weaker model compared to the other two.
+Our proposed model outperforms benchmarks on all metrics, which supports the effectiveness of our method. For the base model, standard BERT performs worse than RoBERTa but better than DistilBERT, which is consistent with the theory. It is worth noting that the ensemble BERT model with hard voting achieves slighly worse scores on all metrics than RoBERTa alone. We think the reason is that the performance of hard voting in this task is affected by DistilBERT which is a weaker model compared to the other two.
 
 \section{Discussion}
-The soft-voting meta model outperforms the four baselines, but there are still some improvements that could be done. 
+Our proposed model is inspired by BERT and ensemble learning. In experments, we fine-tune BERT models and investigate the performance of the individual BERT as well as the ensemble one. The overall computational cost is reasonable, for we can train all models with only one available GPU by leveraging pre-trained BERT from Hugging Face. And the runtime of fine-tuning doesn't have much difference among BERT models. Considering that most tweets are related to topics in daily life, pre-trained BERT models generalize well in this task. However, if the dataset involves lots of terminologies in a specific domain, we need to search for the domain-specific BERT instead of directly downloading the BERT model trained on general domain text. In rare cases, there may be no suitable pre-trained BERT model. Then we are supposed to train BERT from scratch, which is time-consuming and conputationally expensive.
 
-First, the recall of the soft voting model is relatively low, and the recall of the negative sentiment is only $0.59$. Besides, the running of the BERT is very time-consuming, and the efficiency can be improved through parallel. Third, the ensemble learning model is influenced by the classifier. Constrained by computational resources, all of our baseline models use the base-cased classifier. And it may observe better results implementing the large and uncased classifier.
-
+Ensemble learning is the key to improving the performance in our proposed method. Generally, different models have different strengths and weaknesses. The idea of ensemble learning is that combining predictions from different models may increase learning diversity and encourage models to complement each other. In experiments, applying the proper ensemble learning technique enhances the model performance significantly. Besides, comparison between the experimental result of hard voting and that of soft voting illustrates the importance of model combination scheme selection. An ideal combination strategy should minimize the information loss during the model aggregation.
 
 \section{Conclusion}
-We build an ensemble BERT model using soft voting to classify the sentiments of the Twitter text. And this model is quite powerful compared to three BERT base models and the soft voting ensemble model with an accuracy of $0.752$.
- 
+In this paper, we proposed a BERT-based ensemble learning method to classify tweets according to sentiment. We follow the standard sentiment analysis workflow --- hyperparameter tuning, training, and evaluation. To improve model performance, we also adopt training strategies like early stopping. Experimental results support the effectiveness of our model. Due to the limited computational resources, we search a relatively small hyperparameter space and don't try other ensemble learning methods such as bagging and boosting, which are possible directions for future works.
  
 \section{Contributions}
 Authors contribute equally to the programming and the report.
@@ -196,6 +194,89 @@ Authors contribute equally to the programming and the report.
 \bibliography{paper}
 %
 
-\section*{Appendix}
+\section*{Appendix: Detailed Evaluation Report}
+\begin{table}[!ht]
+    \centering
+    \caption{Classification Report of BERT}
+    \begin{tabular}{llll}
+        \toprule
+        \textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1}\\
+        \midrule
+         Negative       & 0.6628  & 0.6464  & 0.6545 \\ 
+         Neutral       & 0.7233  & 0.7175  & 0.7204 \\
+         Positive       & 0.7723  & 0.7868  & 0.7795 \\
+        \midrule
+   Macro Avg.  & 0.7195  & 0.7169  & 0.7181 \\
+Weighted Avg.  & 0.7332  & 0.7338  & 0.7335 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
 
+\begin{table}[!ht]
+    \centering
+    \caption{Classification Report of RoBERTa}
+    \begin{tabular}{llll}
+        \toprule
+        \textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1}\\
+        \midrule
+         Negative &  0.7129 &  0.6280 &  0.6678 \\
+         Neutral  &  0.7287 &  0.7394 &  0.7340 \\
+         Positive &  0.7795 &  0.8034 &  0.7913 \\
+        \midrule
+   Macro Avg. &  0.7404 &  0.7236 &  0.7310 \\
+Weighted Avg. &  0.7464 &  0.7473 &  0.7463 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \caption{Classification Report of DistilBERT}
+    \begin{tabular}{llll}
+        \toprule
+        \textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1}\\
+        \midrule
+         Negative &  0.6584 &  0.5754 &  0.6141 \\
+         Neutral  &  0.6974 &  0.7479 &  0.7218 \\
+         Positive &  0.7771 &  0.7526 &  0.7647 \\
+        \midrule
+   Macro Avg. &  0.7110 &  0.6920 &  0.7002 \\
+Weighted Avg. &  0.7229 &  0.7226 &  0.7218 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \caption{Classification Report of Ensemble BERT with Hard Voting}
+    \begin{tabular}{llll}
+        \toprule
+        \textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1}\\
+        \midrule
+         Negative &  0.6945 &  0.6324 &  0.6620 \\ 
+         Neutral  &  0.7257 &  0.7475 &  0.7364 \\ 
+         Positive &  0.7875 &  0.7888 &  0.7881 \\ 
+        \midrule
+   Macro Avg. &  0.7359 &  0.7229 &  0.7289 \\ 
+Weighted Avg. &  0.7453 &  0.7458 &  0.7452 \\ 
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{table}[!ht]
+    \centering
+    \caption{Classification Report of Ensemble BERT with Soft Voting}
+    \begin{tabular}{llll}
+        \toprule
+        \textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1}\\
+        \midrule
+         Negative &  0.6967 &  0.6464 &  0.6706 \\
+         Neutral  &  0.7396 &  0.7374 &  0.7385 \\
+         Positive &  0.7827 &  0.8077 &  0.7950 \\
+        \midrule
+   Macro Avg. &  0.7397 &  0.7305 &  0.7347 \\
+Weighted Avg. &  0.7499 &  0.7510 &  0.7502 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
 \end{document}
